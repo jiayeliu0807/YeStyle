@@ -163,6 +163,7 @@ function renderHome() {
     `);
   }
 
+  // 有数据时显示概览
   const usagePercent = outfitCount > 0
     ? Math.min(100, Math.round((outfitCount / closetCount) * 100))
     : 0;
@@ -478,19 +479,23 @@ app.addEventListener("click", async (event) => {
   const target = event.target.closest("button");
   if (!target) return;
 
+  // 页面跳转
   if (target.dataset.jump) {
     setTab(target.dataset.jump);
   }
 
+  // 筛选
   if (target.dataset.filter) {
     state.filter = target.dataset.filter;
     render();
   }
 
+  // 打开添加菜单
   if (target.hasAttribute("data-open-sheet")) {
     showSheet();
   }
 
+  // 空状态按钮
   if (target.dataset.emptyAction) {
     if (target.dataset.emptyAction === "closet") showSheet();
     if (target.dataset.emptyAction === "blogger") {
@@ -501,22 +506,26 @@ app.addEventListener("click", async (event) => {
     }
   }
 
+  // 博主详情
   if (target.dataset.bloggerId) {
     const blogger = userData.bloggers.find((b) => b.id === target.dataset.bloggerId);
     if (blogger) {
       state.selectedBlogger = blogger;
+      // 加载该博主的 looks
       const looks = await api(`/api/looks?blogger_id=${blogger.id}`);
       userData.looks = looks || [];
       render();
     }
   }
 
+  // 返回博主列表
   if (target.dataset.backWorkshop) {
     state.selectedBlogger = null;
     userData.looks = [];
     render();
   }
 
+  // 穿搭详情
   if (target.dataset.outfitId) {
     const outfit = await api(`/api/outfits/${target.dataset.outfitId}`);
     if (outfit) {
@@ -525,6 +534,7 @@ app.addEventListener("click", async (event) => {
     }
   }
 
+  // 清除穿搭详情
   if (target.dataset.clearOutfit) {
     state.selectedOutfit = null;
     render();
@@ -542,10 +552,19 @@ sheet.addEventListener("click", async (event) => {
   hideSheet();
 
   if (action === "camera" || action === "album" || action === "file") {
+    // 创建文件选择器
     const input = document.createElement("input");
     input.type = "file";
-    input.accept = "image/*";
-    input.capture = action === "camera" ? "environment" : undefined;
+
+    if (action === "camera") {
+      input.accept = "image/*";
+      input.capture = "environment";
+    } else if (action === "album") {
+      input.accept = "image/*";
+      // 不加 capture，让用户选择相册
+    } else if (action === "file") {
+      input.accept = "*/*";
+    }
 
     input.addEventListener("change", async () => {
       const file = input.files[0];
@@ -553,18 +572,21 @@ sheet.addEventListener("click", async (event) => {
 
       showToast("正在上传...");
 
+      // 上传图片到 R2
       const uploadResult = await apiUpload(file);
       if (!uploadResult.key) {
         showToast("上传失败，请重试");
         return;
       }
 
+      // 弹出输入单品信息（简化版：用 prompt）
       const name = prompt("单品名称（如：灰色羊毛大衣）");
       if (!name) return;
 
       const type = prompt("分类（外套 / 上装 / 下装 / 配饰 / 鞋履）", "上装");
       const material = prompt("材质描述（如：羊毛 / 直线廓形）", "");
 
+      // 保存到 D1
       await api("/api/closet", {
         method: "POST",
         body: JSON.stringify({
