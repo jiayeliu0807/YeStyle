@@ -68,6 +68,14 @@ async function initUser() {
   await loadAllData();
 }
 
+function switchUser(newUserId) {
+  if (!newUserId) return;
+  localStorage.setItem("yestyle_user_id", newUserId);
+  state.userId = newUserId;
+  loadAllData();
+  showToast("已切换用户");
+}
+
 async function loadAllData() {
   const [bloggers, closet, outfits] = await Promise.all([
     api(`/api/bloggers?user_id=${state.userId}`),
@@ -158,6 +166,12 @@ function renderHome() {
           <span style="--w: 0%"></span>
           <span style="--w: 0%"></span>
           <span style="--w: 0%"></span>
+        </div>
+        <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid #E7E8E4;">
+          <p class="eyebrow">USER ID</p>
+          <p style="font-size: 11px; color: #B0B1AD; margin: 4px 0 8px; word-break: break-all;">${state.userId || '未设置'}</p>
+          <input type="text" id="userIdInput" placeholder="输入用户ID切换账号" style="width: 100%; padding: 10px 12px; border: 1px solid #E7E8E4; border-radius: 10px; font-size: 13px; margin-bottom: 8px;" />
+          <button class="secondary-btn" onclick="window.switchUserId()" style="width: 100%;">切换用户</button>
         </div>
       </article>
     `);
@@ -554,9 +568,8 @@ sheet.addEventListener("click", async (event) => {
   if (action === "upload") {
     const input = document.createElement("input");
     input.type = "file";
-    input.accept = "image/*";
+    input.accept = "image/jpeg,image/png,image/heic,image/webp";
     // 不使用 capture 属性，让 iOS 弹出系统选择器
-    // 用户可以在系统选择器里选择相机、照片或文件
 
     input.addEventListener("change", async () => {
       const file = input.files[0];
@@ -601,6 +614,13 @@ sheet.addEventListener("click", async (event) => {
 window.addEventListener("keydown", (event) => {
   if (event.key === "Escape") hideSheet();
 });
+
+window.switchUserId = function() {
+  const input = document.getElementById("userIdInput");
+  if (input && input.value.trim()) {
+    switchUser(input.value.trim());
+  }
+};
 
 // ========== 启动 ==========
 
