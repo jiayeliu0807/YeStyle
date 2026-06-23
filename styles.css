@@ -503,6 +503,14 @@ h3 {
   padding: 14px;
 }
 
+.closet-card img {
+  width: 100%;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 22px;
+  margin-bottom: 14px;
+}
+
 .cloth-art {
   height: 100px;
   margin-bottom: 14px;
