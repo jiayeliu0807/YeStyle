@@ -1,5 +1,4 @@
 // YeStyle 前端 — 对接 Cloudflare Workers API
-// 将 API_BASE 替换为你部署后的 Workers 地址
 
 const API_BASE = "https://yestyle-api.jiaye020807.workers.dev";
 
@@ -16,6 +15,7 @@ const state = {
   selectedBlogger: null,
   selectedLook: null,
   selectedOutfit: null,
+  selectedItem: null,
 };
 
 const userData = {
@@ -24,8 +24,6 @@ const userData = {
   closet: [],
   outfits: [],
 };
-
-// ========== API 工具 ==========
 
 async function api(path, options = {}) {
   const url = `${API_BASE}${path}`;
@@ -51,8 +49,6 @@ function imageUrl(key) {
   if (!key) return "";
   return `${API_BASE}/api/image/${key}`;
 }
-
-// ========== 初始化 ==========
 
 async function initUser() {
   let userId = localStorage.getItem("yestyle_user_id");
@@ -88,8 +84,6 @@ async function loadAllData() {
   render();
 }
 
-// ========== 导航 ==========
-
 function setTab(tab) {
   state.tab = tab;
   tabButtons.forEach((btn) => btn.classList.toggle("active", btn.dataset.tab === tab));
@@ -112,13 +106,10 @@ function renderEmptyState({ title, text, primary, action }) {
   `;
 }
 
-// ========== 首页 ==========
-
 function renderHome() {
   const closetCount = userData.closet.length;
   const bloggerCount = userData.bloggers.length;
   const outfitCount = userData.outfits.length;
-
   const hasData = closetCount > 0 || bloggerCount > 0;
 
   if (!hasData) {
@@ -130,7 +121,6 @@ function renderHome() {
         </div>
         <button class="glass-btn" data-jump="wardrobe">导入衣橱</button>
       </header>
-
       <article class="empty-hero">
         <div class="placeholder-art"><span>Y</span></div>
         <p class="eyebrow">TODAY RECOMMENDATION</p>
@@ -141,7 +131,6 @@ function renderHome() {
           <button class="secondary-btn" data-jump="workshop">添加博主风格</button>
         </div>
       </article>
-
       <section class="section-row">
         <article class="metric-card">
           <div class="metric-ring" style="--value:0%"><span>--</span></div>
@@ -157,7 +146,6 @@ function renderHome() {
           <div class="spark"></div>
         </article>
       </section>
-
       <article class="content-card">
         <p class="eyebrow">STYLE INDEX</p>
         <h3>风格雷达未建立</h3>
@@ -177,10 +165,7 @@ function renderHome() {
     `);
   }
 
-  // 有数据时显示概览
-  const usagePercent = outfitCount > 0
-    ? Math.min(100, Math.round((outfitCount / closetCount) * 100))
-    : 0;
+  const usagePercent = outfitCount > 0 ? Math.min(100, Math.round((outfitCount / closetCount) * 100)) : 0;
 
   return pageShell(`
     <header class="topline">
@@ -190,7 +175,6 @@ function renderHome() {
       </div>
       <button class="glass-btn" data-jump="wardrobe">管理衣橱</button>
     </header>
-
     <section class="section-row">
       <article class="metric-card">
         <div class="metric-ring" style="--value:${usagePercent}%"><span>${usagePercent}%</span></div>
@@ -206,7 +190,6 @@ function renderHome() {
         <div class="spark"></div>
       </article>
     </section>
-
     ${outfitCount > 0 ? `
       <article class="content-card">
         <p class="eyebrow">RECENT OUTFITS</p>
@@ -224,7 +207,6 @@ function renderHome() {
         </div>
       </article>
     ` : ""}
-
     <article class="content-card">
       <p class="eyebrow">STYLE INDEX</p>
       <h3>风格概览</h3>
@@ -238,11 +220,8 @@ function renderHome() {
   `);
 }
 
-// ========== 博主工坊 ==========
-
 function renderWorkshop() {
   if (state.selectedBlogger) return renderBloggerDetail();
-
   return pageShell(`
     <header class="topline">
       <div>
@@ -251,7 +230,6 @@ function renderWorkshop() {
       </div>
       <span class="chip">${userData.bloggers.length} 位博主</span>
     </header>
-
     ${userData.bloggers.length > 0 ? `
       <div class="blogger-list">
         ${userData.bloggers.map((b) => `
@@ -278,7 +256,6 @@ function renderWorkshop() {
 function renderBloggerDetail() {
   const blogger = state.selectedBlogger;
   const looks = userData.looks;
-
   return pageShell(`
     <header class="topline">
       <div>
@@ -287,7 +264,6 @@ function renderBloggerDetail() {
       </div>
       <button class="secondary-btn" data-back-workshop>返回</button>
     </header>
-
     ${looks.length > 0 ? `
       <div class="lookbook-list">
         ${looks.map((look) => `
@@ -310,14 +286,9 @@ function renderBloggerDetail() {
   `);
 }
 
-// ========== 我的衣橱 ==========
-
 function renderWardrobe() {
   const categories = ["全部", "外套", "上装", "下装", "配饰", "鞋履"];
-  const items = state.filter === "全部"
-    ? userData.closet
-    : userData.closet.filter((item) => item.type === state.filter);
-
+  const items = state.filter === "全部" ? userData.closet : userData.closet.filter((item) => item.type === state.filter);
   return pageShell(`
     <header class="topline">
       <div>
@@ -326,39 +297,81 @@ function renderWardrobe() {
       </div>
       <button class="add-top" data-open-sheet aria-label="添加单品">＋</button>
     </header>
-
     <div class="filter-strip">
       ${categories.map((cat) => `
         <button class="filter-btn ${state.filter === cat ? "active" : ""}" data-filter="${cat}">${cat}</button>
       `).join("")}
     </div>
-
     <section class="closet-grid">
       ${items.map((item) => `
-        <article class="closet-card" data-item-id="${item.id}">
+        <button class="closet-card" data-item-id="${item.id}">
           ${item.image_key ? `<img src="${imageUrl(item.image_key)}" alt="${item.name}" />` : `<div class="cloth-art" style="--c1:${item.color_1};--c2:${item.color_2};"></div>`}
           <h3>${item.name}</h3>
           <p>${item.type} · ${item.material}</p>
-        </article>
+        </button>
       `).join("")}
     </section>
-
     ${items.length ? "" : renderEmptyState({
       title: state.filter === "全部" ? "衣橱还是空的" : `暂无「${state.filter}」分类单品`,
       text: "点击右上角或右下角的「＋」上传你自己的真实衣服图片，后续会在这里显示网格卡片。",
       primary: "添加第一件单品",
       action: "closet"
     })}
-
     <button class="floating-add" data-open-sheet aria-label="添加单品">＋</button>
   `);
 }
 
-// ========== 穿搭详情 ==========
+function renderItemDetail() {
+  const item = state.selectedItem;
+  if (!item) {
+    setTab("wardrobe");
+    return "";
+  }
+
+  return pageShell(`
+    <header class="topline">
+      <div>
+        <p class="eyebrow">ITEM DETAIL</p>
+        <h1>单品<br>详情</h1>
+      </div>
+      <button class="secondary-btn" data-back-wardrobe>返回衣橱</button>
+    </header>
+
+    ${item.image_key ? `
+      <article class="detail-hero">
+        <img src="${imageUrl(item.image_key)}" alt="${item.name}" />
+      </article>
+    ` : `<div class="cloth-art" style="--c1:${item.color_1};--c2:${item.color_2}; height: 200px; margin-bottom: 16px;"></div>`}
+
+    <section class="content-card">
+      <p class="eyebrow">ITEM INFO</p>
+      <h3>${item.name}</h3>
+      <p>分类：${item.type}</p>
+      <p>材质：${item.material || "未填写"}</p>
+    </section>
+
+    <section class="content-card">
+      <p class="eyebrow">EDIT ITEM</p>
+      <h3>编辑单品</h3>
+      <div style="display: grid; gap: 12px; margin-top: 14px;">
+        <input type="text" id="editName" value="${item.name}" placeholder="名称" style="width: 100%; padding: 10px 12px; border: 1px solid #E7E8E4; border-radius: 10px; font-size: 14px;" />
+        <select id="editType" style="width: 100%; padding: 10px 12px; border: 1px solid #E7E8E4; border-radius: 10px; font-size: 14px;">
+          <option value="外套" ${item.type === "外套" ? "selected" : ""}>外套</option>
+          <option value="上装" ${item.type === "上装" ? "selected" : ""}>上装</option>
+          <option value="下装" ${item.type === "下装" ? "selected" : ""}>下装</option>
+          <option value="配饰" ${item.type === "配饰" ? "selected" : ""}>配饰</option>
+          <option value="鞋履" ${item.type === "鞋履" ? "selected" : ""}>鞋履</option>
+        </select>
+        <input type="text" id="editMaterial" value="${item.material || ""}" placeholder="材质描述" style="width: 100%; padding: 10px 12px; border: 1px solid #E7E8E4; border-radius: 10px; font-size: 14px;" />
+        <button class="primary-btn" data-save-item="${item.id}" style="width: 100%;">保存修改</button>
+        <button class="secondary-btn" data-delete-item="${item.id}" style="width: 100%; background: rgba(255,100,100,0.2); color: #c44;">删除单品</button>
+      </div>
+    </section>
+  `);
+}
 
 function renderDetail() {
   const outfit = state.selectedOutfit;
-
   if (!outfit) {
     return pageShell(`
       <header class="topline">
@@ -368,7 +381,6 @@ function renderDetail() {
         </div>
         <button class="secondary-btn" data-jump="wardrobe">查看衣橱</button>
       </header>
-
       ${userData.outfits.length > 0 ? `
         <div class="outfit-mini-list">
           ${userData.outfits.map((o) => `
@@ -388,13 +400,11 @@ function renderDetail() {
           <h2>暂无穿搭详情</h2>
           <p>当你上传真实衣橱，并选择真实博主 Lookbook 进行配对后，这里会展示参考图、单品拆解和 AI 风格逻辑。</p>
         </article>
-
         <section class="content-card">
           <p class="eyebrow">ITEM BREAKDOWN</p>
           <h3>单品拆解</h3>
           <p>还没有生成结果。</p>
         </section>
-
         <section class="content-card">
           <p class="eyebrow">AI STYLE LOGIC</p>
           <h3>为什么这么搭配</h3>
@@ -403,7 +413,6 @@ function renderDetail() {
       `}
     `);
   }
-
   return pageShell(`
     <header class="topline">
       <div>
@@ -412,16 +421,13 @@ function renderDetail() {
       </div>
       <button class="secondary-btn" data-clear-outfit>返回列表</button>
     </header>
-
     ${outfit.image_key ? `
       <article class="detail-hero">
         <img src="${imageUrl(outfit.image_key)}" alt="${outfit.name}" />
         <span class="chip">${outfit.occasion || ""}</span>
       </article>
     ` : ""}
-
     <h2>${outfit.name}</h2>
-
     <section class="content-card">
       <p class="eyebrow">ITEM BREAKDOWN</p>
       <h3>单品拆解</h3>
@@ -440,7 +446,6 @@ function renderDetail() {
         </div>
       ` : "<p>暂无单品数据。</p>"}
     </section>
-
     <section class="content-card">
       <p class="eyebrow">AI STYLE LOGIC</p>
       <h3>为什么这么搭配</h3>
@@ -452,19 +457,16 @@ function renderDetail() {
   `);
 }
 
-// ========== 渲染 ==========
-
 function render() {
   const templates = {
     home: renderHome,
     workshop: renderWorkshop,
     wardrobe: renderWardrobe,
     detail: renderDetail,
+    itemDetail: renderItemDetail,
   };
   app.innerHTML = templates[state.tab]();
 }
-
-// ========== 弹窗 ==========
 
 function showSheet() {
   sheet.classList.add("open");
@@ -483,8 +485,6 @@ function showToast(message) {
   showToast.timer = window.setTimeout(() => toast.classList.remove("show"), 1900);
 }
 
-// ========== 事件绑定 ==========
-
 tabButtons.forEach((button) => {
   button.addEventListener("click", () => setTab(button.dataset.tab));
 });
@@ -493,23 +493,19 @@ app.addEventListener("click", async (event) => {
   const target = event.target.closest("button");
   if (!target) return;
 
-  // 页面跳转
   if (target.dataset.jump) {
     setTab(target.dataset.jump);
   }
 
-  // 筛选
   if (target.dataset.filter) {
     state.filter = target.dataset.filter;
     render();
   }
 
-  // 打开添加菜单
   if (target.hasAttribute("data-open-sheet")) {
     showSheet();
   }
 
-  // 空状态按钮
   if (target.dataset.emptyAction) {
     if (target.dataset.emptyAction === "closet") showSheet();
     if (target.dataset.emptyAction === "blogger") {
@@ -520,26 +516,22 @@ app.addEventListener("click", async (event) => {
     }
   }
 
-  // 博主详情
   if (target.dataset.bloggerId) {
     const blogger = userData.bloggers.find((b) => b.id === target.dataset.bloggerId);
     if (blogger) {
       state.selectedBlogger = blogger;
-      // 加载该博主的 looks
       const looks = await api(`/api/looks?blogger_id=${blogger.id}`);
       userData.looks = looks || [];
       render();
     }
   }
 
-  // 返回博主列表
   if (target.dataset.backWorkshop) {
     state.selectedBlogger = null;
     userData.looks = [];
     render();
   }
 
-  // 穿搭详情
   if (target.dataset.outfitId) {
     const outfit = await api(`/api/outfits/${target.dataset.outfitId}`);
     if (outfit) {
@@ -548,10 +540,58 @@ app.addEventListener("click", async (event) => {
     }
   }
 
-  // 清除穿搭详情
   if (target.dataset.clearOutfit) {
     state.selectedOutfit = null;
     render();
+  }
+
+  if (target.dataset.itemId) {
+    const item = userData.closet.find((i) => i.id === target.dataset.itemId);
+    if (item) {
+      state.selectedItem = item;
+      setTab("itemDetail");
+    }
+  }
+
+  if (target.dataset.backWardrobe) {
+    state.selectedItem = null;
+    setTab("wardrobe");
+  }
+
+  if (target.dataset.saveItem) {
+    const itemId = target.dataset.saveItem;
+    const newName = document.getElementById("editName")?.value;
+    const newType = document.getElementById("editType")?.value;
+    const newMaterial = document.getElementById("editMaterial")?.value;
+
+    if (newName) {
+      await api(`/api/closet/${itemId}`, {
+        method: "PUT",
+        body: JSON.stringify({
+          name: newName,
+          type: newType || "上装",
+          material: newMaterial || "",
+        }),
+      });
+      showToast("保存成功");
+      await loadAllData();
+      const updatedItem = userData.closet.find((i) => i.id === itemId);
+      if (updatedItem) {
+        state.selectedItem = updatedItem;
+        render();
+      }
+    }
+  }
+
+  if (target.dataset.deleteItem) {
+    const itemId = target.dataset.deleteItem;
+    if (confirm("确定要删除这个单品吗？")) {
+      await api(`/api/closet/${itemId}`, { method: "DELETE" });
+      showToast("已删除");
+      state.selectedItem = null;
+      await loadAllData();
+      setTab("wardrobe");
+    }
   }
 });
 
@@ -569,7 +609,6 @@ sheet.addEventListener("click", async (event) => {
     const input = document.createElement("input");
     input.type = "file";
     input.accept = "image/jpeg,image/png,image/heic,image/webp";
-    // 不使用 capture 属性，让 iOS 弹出系统选择器
 
     input.addEventListener("change", async () => {
       const file = input.files[0];
@@ -577,21 +616,18 @@ sheet.addEventListener("click", async (event) => {
 
       showToast("正在上传...");
 
-      // 上传图片到 R2
       const uploadResult = await apiUpload(file);
       if (!uploadResult.key) {
         showToast("上传失败，请重试");
         return;
       }
 
-      // 弹出输入单品信息（简化版：用 prompt）
       const name = prompt("单品名称（如：灰色羊毛大衣）");
       if (!name) return;
 
       const type = prompt("分类（外套 / 上装 / 下装 / 配饰 / 鞋履）", "上装");
       const material = prompt("材质描述（如：羊毛 / 直线廓形）", "");
 
-      // 保存到 D1
       await api("/api/closet", {
         method: "POST",
         body: JSON.stringify({
@@ -621,8 +657,6 @@ window.switchUserId = function() {
     switchUser(input.value.trim());
   }
 };
-
-// ========== 启动 ==========
 
 initUser();
 
