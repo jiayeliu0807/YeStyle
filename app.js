@@ -137,11 +137,10 @@ function renderHome() {
       </header>
 
       <section style="margin-bottom: 16px;">
-        <button class="primary-btn" data-ai-recommend style="width: 100%; padding: 14px; font-size: 14px;">
+        <button class="primary-btn" data-action="ai-recommend" style="width: 100%; padding: 14px; font-size: 14px;">
           ✦ AI 智能搭配推荐
         </button>
       </section>
-
       <article class="empty-hero">
         <div class="placeholder-art"><span>Y</span></div>
         <p class="eyebrow">TODAY RECOMMENDATION</p>
@@ -219,7 +218,7 @@ function renderHome() {
     </section>
 
     <section style="margin-bottom: 16px;">
-      <button class="primary-btn" data-ai-recommend style="width: 100%; padding: 14px; font-size: 14px;">
+      <button class="primary-btn" data-action="ai-recommend" style="width: 100%; padding: 14px; font-size: 14px;">
         ✦ AI 智能搭配推荐
       </button>
     </section>
@@ -322,7 +321,7 @@ function renderHome() {
       ` : ""}
 
       <section style="margin-top: 16px; text-align: center;">
-        <button class="secondary-btn" data-clear-ai style="width: 100%;">清除推荐结果</button>
+        <button class="secondary-btn" data-action="clear-ai" style="width: 100%;">清除推荐结果</button>
       </section>
     ` : ""}
   `);
@@ -340,7 +339,7 @@ function renderWorkshop() {
         <p class="eyebrow">CREATOR ATELIER</p>
         <h1>博主<br>工坊</h1>
       </div>
-      <button class="add-top" data-add-blogger aria-label="添加博主">＋</button>
+      <button class="add-top" data-action="add-blogger" aria-label="添加博主">＋</button>
     </header>
 
     ${userData.bloggers.length > 0 ? `
@@ -373,7 +372,7 @@ function renderBloggerForm() {
         <p class="eyebrow">NEW BLOGGER</p>
         <h1>添加<br>博主</h1>
       </div>
-      <button class="secondary-btn" data-cancel-blogger>取消</button>
+      <button class="secondary-btn" data-action="cancel-blogger">取消</button>
     </header>
 
     <section class="content-card">
@@ -384,7 +383,7 @@ function renderBloggerForm() {
         <input type="text" id="bloggerTitle" placeholder="头衔（如：极简主义造型师）" style="width: 100%; padding: 10px 12px; border: 1px solid #E7E8E4; border-radius: 10px; font-size: 14px;" />
         <textarea id="bloggerDesc" placeholder="风格描述（如：擅长用基础款打造高级感日常穿搭）" style="width: 100%; padding: 10px 12px; border: 1px solid #E7E8E4; border-radius: 10px; font-size: 14px; min-height: 80px; resize: vertical;"></textarea>
         <input type="text" id="bloggerTags" placeholder="风格标签，用逗号分隔（如：极简, 中性, 通勤）" style="width: 100%; padding: 10px 12px; border: 1px solid #E7E8E4; border-radius: 10px; font-size: 14px;" />
-        <button class="primary-btn" data-save-blogger style="width: 100%;">保存博主</button>
+        <button class="primary-btn" data-action="save-blogger" style="width: 100%;">保存博主</button>
       </div>
     </section>
   `);
@@ -401,8 +400,8 @@ function renderBloggerDetail() {
         <h1>${blogger.name} 工坊</h1>
       </div>
       <div style="display: flex; gap: 8px;">
-        <button class="secondary-btn" data-back-workshop>返回</button>
-        <button class="primary-btn" data-upload-look>上传 Lookbook</button>
+        <button class="secondary-btn" data-action="back-workshop">返回</button>
+        <button class="primary-btn" data-action="upload-look">上传 Lookbook</button>
       </div>
     </header>
 
@@ -494,7 +493,7 @@ function renderItemDetail() {
         <p class="eyebrow">ITEM DETAIL</p>
         <h1>单品<br>详情</h1>
       </div>
-      <button class="secondary-btn" data-back-wardrobe>返回衣橱</button>
+      <button class="secondary-btn" data-action="back-wardrobe">返回衣橱</button>
     </header>
 
     ${item.image_key ? `
@@ -586,7 +585,7 @@ function renderDetail() {
         <p class="eyebrow">OUTFIT DETAIL</p>
         <h1>穿搭<br>详情</h1>
       </div>
-      <button class="secondary-btn" data-clear-outfit>返回列表</button>
+      <button class="secondary-btn" data-action="clear-outfit">返回列表</button>
     </header>
 
     ${outfit.image_key ? `
@@ -699,19 +698,19 @@ app.addEventListener("click", async (event) => {
   }
 
   // 打开博主添加表单
-  if (target.dataset.addBlogger) {
+  if (target.dataset.action === "add-blogger") {
     state.showBloggerForm = true;
     render();
   }
 
   // 取消博主添加
-  if (target.dataset.cancelBlogger) {
+  if (target.dataset.action === "cancel-blogger") {
     state.showBloggerForm = false;
     render();
   }
 
   // 保存博主
-  if (target.dataset.saveBlogger) {
+  if (target.dataset.action === "save-blogger") {
     const name = document.getElementById("bloggerName")?.value.trim();
     const title = document.getElementById("bloggerTitle")?.value.trim();
     const description = document.getElementById("bloggerDesc")?.value.trim();
@@ -739,7 +738,7 @@ app.addEventListener("click", async (event) => {
   }
 
   // 上传 Lookbook
-  if (target.dataset.uploadLook) {
+  if (target.dataset.action === "upload-look") {
     const input = document.createElement("input");
     input.type = "file";
     input.accept = "image/jpeg,image/png,image/heic,image/webp";
@@ -791,7 +790,7 @@ app.addEventListener("click", async (event) => {
   }
 
   // AI 搭配推荐
-  if (target.dataset.aiRecommend) {
+  if (target.dataset.action === "ai-recommend") {
     if (userData.closet.length === 0) {
       showToast("请先添加衣橱单品");
       return;
@@ -850,7 +849,7 @@ app.addEventListener("click", async (event) => {
   }
 
   // 返回博主列表
-  if (target.dataset.backWorkshop) {
+  if (target.dataset.action === "back-workshop") {
     state.selectedBlogger = null;
     userData.looks = [];
     render();
@@ -866,13 +865,13 @@ app.addEventListener("click", async (event) => {
   }
 
   // 清除穿搭详情
-  if (target.dataset.clearOutfit) {
+  if (target.dataset.action === "clear-outfit") {
     state.selectedOutfit = null;
     render();
   }
 
   // 清除 AI 推荐结果
-  if (target.dataset.clearAi) {
+  if (target.dataset.action === "clear-ai") {
     state.aiResult = null;
     render();
   }
@@ -887,7 +886,7 @@ app.addEventListener("click", async (event) => {
   }
 
   // 返回衣橱
-  if (target.dataset.backWardrobe) {
+  if (target.dataset.action === "back-wardrobe") {
     state.selectedItem = null;
     setTab("wardrobe");
   }
