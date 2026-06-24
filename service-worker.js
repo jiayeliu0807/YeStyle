@@ -1,4 +1,4 @@
-const CACHE_NAME = "yestyle-pwa-v2";
+const CACHE_NAME = "yestyle-pwa-v3";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -37,14 +37,18 @@ self.addEventListener("fetch", (event) => {
 
   event.respondWith(
     caches.match(event.request).then((cached) => {
-      // 先返回缓存，同时更新缓存
-      const fetchPromise = fetch(event.request).then((response) => {
-        const copy = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
-        return response;
-      }).catch(() => cached);
+      // JS 和 HTML 文件走网络优先（确保最新代码）
+      if (event.request.url.endsWith(".js") || event.request.url.endsWith(".html") || event.request.url.endsWith(".css")) {
+        const fetchPromise = fetch(event.request).then((response) => {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+          return response;
+        }).catch(() => cached);
+        return fetchPromise;
+      }
 
-      return cached || fetchPromise;
+      // 图片等静态资源走缓存优先
+      return cached || fetch(event.request);
     })
   );
 });
