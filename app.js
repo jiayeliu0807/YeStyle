@@ -253,6 +253,14 @@ function renderHome() {
       </div>
     </article>
 
+    <!-- USER ID 区域（始终显示） -->
+    <section class="content-card">
+      <p class="eyebrow">USER ID</p>
+      <p style="font-size: 11px; color: #B0B1AD; margin: 4px 0 8px; word-break: break-all;">${state.userId || '未设置'}</p>
+      <input type="text" id="userIdInput" placeholder="输入用户ID切换账号" style="width: 100%; padding: 10px 12px; border: 1px solid #E7E8E4; border-radius: 10px; font-size: 13px; margin-bottom: 8px;" />
+      <button class="secondary-btn" onclick="window.switchUserId()" style="width: 100%;">切换用户</button>
+    </section>
+
     ${state.aiLoading ? `
       <section class="content-card" style="text-align: center; padding: 30px;">
         <p class="eyebrow">AI ANALYZING</p>
