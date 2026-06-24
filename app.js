@@ -18,6 +18,9 @@ const state = {
   selectedOutfit: null,
   selectedItem: null,
   showBloggerForm: false,
+  showRecommendPanel: false,
+  aiLoading: false,
+  aiResult: null,
 };
 
 const userData = {
@@ -133,6 +136,12 @@ function renderHome() {
         <button class="glass-btn" data-jump="wardrobe">导入衣橱</button>
       </header>
 
+      <section style="margin-bottom: 16px;">
+        <button class="primary-btn" data-ai-recommend style="width: 100%; padding: 14px; font-size: 14px;">
+          ✦ AI 智能搭配推荐
+        </button>
+      </section>
+
       <article class="empty-hero">
         <div class="placeholder-art"><span>Y</span></div>
         <p class="eyebrow">TODAY RECOMMENDATION</p>
@@ -209,6 +218,12 @@ function renderHome() {
       </article>
     </section>
 
+    <section style="margin-bottom: 16px;">
+      <button class="primary-btn" data-ai-recommend style="width: 100%; padding: 14px; font-size: 14px;">
+        ✦ AI 智能搭配推荐
+      </button>
+    </section>
+
     ${outfitCount > 0 ? `
       <article class="content-card">
         <p class="eyebrow">RECENT OUTFITS</p>
@@ -237,6 +252,71 @@ function renderHome() {
         <span style="--w: ${Math.min(100, outfitCount * 10)}%"></span>
       </div>
     </article>
+
+    ${state.aiLoading ? `
+      <section class="content-card" style="text-align: center; padding: 30px;">
+        <p class="eyebrow">AI ANALYZING</p>
+        <h3>AI 正在分析你的衣橱...</h3>
+        <p>请稍候，AI 正在根据博主风格和你的单品生成搭配方案。</p>
+      </section>
+    ` : ""}
+
+    ${state.aiResult && !state.aiLoading ? `
+      <section class="content-card">
+        <p class="eyebrow">AI STYLE ANALYSIS</p>
+        <h3>博主穿搭思路</h3>
+        <p>${state.aiResult.blogger_styling || ""}</p>
+      </section>
+
+      <section class="content-card">
+        <p class="eyebrow">COLOR PHILOSOPHY</p>
+        <h3>颜色搭配思路</h3>
+        <p>${state.aiResult.color_philosophy || ""}</p>
+      </section>
+
+      ${state.aiResult.style_keywords && state.aiResult.style_keywords.length > 0 ? `
+        <section class="content-card">
+          <p class="eyebrow">STYLE KEYWORDS</p>
+          <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px;">
+            ${state.aiResult.style_keywords.map(k => `<span class="chip">${k}</span>`).join("")}
+          </div>
+        </section>
+      ` : ""}
+
+      ${state.aiResult.outfits && state.aiResult.outfits.length > 0 ? `
+        <section class="content-card">
+          <p class="eyebrow">OUTFIT RECOMMENDATIONS</p>
+          <h3>搭配推荐</h3>
+          ${state.aiResult.outfits.map((outfit, i) => `
+            <div style="margin-top: 16px; padding: 16px; background: rgba(255,255,255,0.4); border-radius: 18px; border: 1px solid rgba(255,255,255,0.5);">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="margin: 0;">方案 ${i + 1}：${outfit.name}</h3>
+                <span class="chip">${outfit.occasion || ""}</span>
+              </div>
+              <div style="margin-top: 10px; display: flex; gap: 6px; flex-wrap: wrap;">
+                ${(outfit.items || []).map(item => `<span class="chip" style="background: var(--accent);">${item}</span>`).join("")}
+              </div>
+              <p style="margin-top: 10px; color: var(--ink-soft); font-size: 12px; line-height: 1.5;">${outfit.reason || ""}</p>
+              ${outfit.alternatives && outfit.alternatives.length > 0 ? `
+                <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(0,0,0,0.08);">
+                  <p style="font-size: 11px; font-weight: 800; color: var(--ink-soft); margin-bottom: 6px;">单品替换建议：</p>
+                  ${outfit.alternatives.map(alt => `
+                    <p style="font-size: 11px; color: var(--ink-soft); margin: 4px 0;">
+                      <span style="text-decoration: line-through;">${alt.original}</span>
+                      → <strong>${alt.suggestion}</strong>（${alt.reason || ""}）
+                    </p>
+                  `).join("")}
+                </div>
+              ` : ""}
+            </div>
+          `).join("")}
+        </section>
+      ` : ""}
+
+      <section style="margin-top: 16px; text-align: center;">
+        <button class="secondary-btn" data-clear-ai style="width: 100%;">清除推荐结果</button>
+      </section>
+    ` : ""}
   `);
 }
 
@@ -312,26 +392,36 @@ function renderBloggerDetail() {
         <p class="eyebrow">LOOKBOOK / ${(blogger.title || "").toUpperCase()}</p>
         <h1>${blogger.name} 工坊</h1>
       </div>
-      <button class="secondary-btn" data-back-workshop>返回</button>
+      <div style="display: flex; gap: 8px;">
+        <button class="secondary-btn" data-back-workshop>返回</button>
+        <button class="primary-btn" data-upload-look>上传 Lookbook</button>
+      </div>
     </header>
+
+    ${blogger.style_tags ? `
+      <section class="content-card">
+        <p class="eyebrow">STYLE TAGS</p>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px;">
+          ${blogger.style_tags.split(",").map(t => `<span class="chip">${t.trim()}</span>`).join("")}
+        </div>
+      </section>
+    ` : ""}
 
     ${looks.length > 0 ? `
       <div class="lookbook-list">
         ${looks.map((look) => `
-          <article class="lookbook-card">
-            ${look.image_key ? `<img src="${imageUrl(look.image_key)}" alt="${look.name}" />` : `<div class="placeholder-art"><span>◇</span></div>`}
-            <div class="lookbook-info">
-              <span class="chip">${look.occasion || ""}</span>
-              <h3>${look.name}</h3>
-              <p>${look.idea || ""}</p>
-            </div>
+          <article class="content-card" style="margin-top: 14px;">
+            ${look.image_key ? `<img src="${imageUrl(look.image_key)}" alt="${look.name}" style="width: 100%; height: 200px; object-fit: cover; border-radius: 22px; margin-bottom: 12px;" />` : ""}
+            <span class="chip">${look.occasion || ""}</span>
+            <h3 style="margin-top: 8px;">${look.name}</h3>
+            <p>${look.idea || ""}</p>
           </article>
         `).join("")}
       </div>
     ` : renderEmptyState({
       title: "暂无穿搭作品",
-      text: "为这位博主添加 Lookbook 穿搭作品后，这里会展示搭配思路和适合场合。",
-      primary: "添加作品",
+      text: "上传博主的穿搭图片，AI 会自动分析风格标签、颜色搭配和适合场合。",
+      primary: "上传 Lookbook",
       action: "look"
     })}
   `);
@@ -640,6 +730,105 @@ app.addEventListener("click", async (event) => {
     await loadAllData();
   }
 
+  // 上传 Lookbook
+  if (target.dataset.uploadLook) {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/jpeg,image/png,image/heic,image/webp";
+
+    input.addEventListener("change", async () => {
+      const file = input.files[0];
+      if (!file) return;
+
+      showToast("正在上传并分析...");
+
+      // 上传图片
+      const uploadResult = await apiUpload(file);
+      if (!uploadResult.key) {
+        showToast("上传失败");
+        return;
+      }
+
+      // 调用 AI 分析
+      const lookName = prompt("穿搭名称（如：通勤极简风）", "未命名穿搭");
+      try {
+        const result = await api("/api/ai/analyze-look", {
+          method: "POST",
+          body: JSON.stringify({
+            image_key: uploadResult.key,
+            blogger_id: state.selectedBlogger.id,
+            look_name: lookName || "未命名穿搭",
+          }),
+        });
+
+        if (result.analysis) {
+          showToast("AI 分析完成！");
+          // 重新加载博主的 looks
+          const looks = await api(`/api/looks?blogger_id=${state.selectedBlogger.id}`);
+          userData.looks = looks || [];
+          // 更新博主信息（风格标签可能已更新）
+          const bloggers = await api(`/api/bloggers?user_id=${state.userId}`);
+          userData.bloggers = bloggers || [];
+          state.selectedBlogger = userData.bloggers.find(b => b.id === state.selectedBlogger.id) || state.selectedBlogger;
+          render();
+        } else {
+          showToast("分析失败：" + (result.error || "未知错误"));
+        }
+      } catch (e) {
+        showToast("AI 分析出错：" + e.message);
+      }
+    });
+
+    input.click();
+  }
+
+  // AI 搭配推荐
+  if (target.dataset.aiRecommend) {
+    if (userData.closet.length === 0) {
+      showToast("请先添加衣橱单品");
+      return;
+    }
+
+    const occasion = prompt("选择场合（如：通勤、约会、聚会、日常、运动）", "日常");
+
+    // 选择博主
+    let bloggerId = "";
+    if (userData.bloggers.length > 0) {
+      const bloggerList = userData.bloggers.map((b, i) => `${i + 1}. ${b.name}（${b.title || ""}）`).join("\n");
+      const choice = prompt(`选择参考博主（输入序号，或留空跳过）：\n${bloggerList}`);
+      if (choice) {
+        const idx = parseInt(choice) - 1;
+        if (idx >= 0 && idx < userData.bloggers.length) {
+          bloggerId = userData.bloggers[idx].id;
+        }
+      }
+    }
+
+    state.aiLoading = true;
+    state.aiResult = null;
+    render();
+
+    try {
+      const result = await api("/api/ai/recommend", {
+        method: "POST",
+        body: JSON.stringify({
+          user_id: state.userId,
+          blogger_id: bloggerId,
+          occasion: occasion || "日常",
+        }),
+      });
+
+      state.aiResult = result;
+      state.aiLoading = false;
+      await loadAllData();
+      render();
+    } catch (e) {
+      state.aiLoading = false;
+      showToast("AI 推荐出错：" + e.message);
+      render();
+    }
+  }
+
   // 博主详情
   if (target.dataset.bloggerId) {
     const blogger = userData.bloggers.find((b) => b.id === target.dataset.bloggerId);
@@ -671,6 +860,12 @@ app.addEventListener("click", async (event) => {
   // 清除穿搭详情
   if (target.dataset.clearOutfit) {
     state.selectedOutfit = null;
+    render();
+  }
+
+  // 清除 AI 推荐结果
+  if (target.dataset.clearAi) {
+    state.aiResult = null;
     render();
   }
 
