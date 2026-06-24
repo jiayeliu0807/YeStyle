@@ -425,12 +425,14 @@ function renderBloggerDetail() {
           </article>
         `).join("")}
       </div>
-    ` : renderEmptyState({
-      title: "暂无穿搭作品",
-      text: "上传博主的穿搭图片，AI 会自动分析风格标签、颜色搭配和适合场合。",
-      primary: "上传 Lookbook",
-      action: "look"
-    })}
+    ` : `
+      <section class="empty-state" style="margin-top: 14px;">
+        <div class="empty-mark">＋</div>
+        <h3>暂无穿搭作品</h3>
+        <p>上传博主的穿搭图片，AI 会自动分析风格标签、颜色搭配和适合场合。</p>
+        <button class="primary-btn" data-action="upload-look">上传 Lookbook</button>
+      </section>
+    `}
   `);
 }
 
@@ -692,9 +694,7 @@ app.addEventListener("click", async (event) => {
       state.showBloggerForm = true;
       render();
     }
-    if (target.dataset.emptyAction === "look") {
-      showToast("作品入口已准备好，后续可上传 Lookbook 图片");
-    }
+    // look 空状态已改用 data-action="upload-look"
   }
 
   // 打开博主添加表单
